@@ -43,8 +43,11 @@
             </option>
           </select>
         </div>
-        <div class="flex-row">
-          <v-button id="reRenderCanvas" class="w-1/2" :onClick="reRenderCanvas"
+        <div class="flex flex-row justify-evenly">
+          <v-button
+            id="reRenderCanvas"
+            class="w-1/2 mr-2"
+            :onClick="reRenderCanvas"
             >Undo</v-button
           >
           <v-button
@@ -77,7 +80,6 @@ export default {
   name: "Maker",
   data: () => ({
     canvas: null,
-    key: "",
     redoButtonDisabled: true,
     currentObjectColour: "",
     colours: ["Red", "Green", "Blue", "Yellow", "Pink", "Purple"],
@@ -124,8 +126,7 @@ export default {
     },
     reRenderCanvas() {
       this.canvas.renderAll();
-      this.redoButtonDisabled = true;
-      console.log(this.redoButtonDisabled);
+      this.redoButtonDisabled = !this.redoButtonDisabled;
     },
     getCurrentCanvasObjects() {
       console.log(this.canvas.getObjects());
@@ -140,9 +141,6 @@ export default {
       this.canvas.getActiveObject().set("fill", event.target.value);
       this.canvas.renderAll();
     },
-    // handleObjectSelected(event) {
-    //   console.log(event.target);
-    // },
   },
   components: {
     "v-button": Button,
