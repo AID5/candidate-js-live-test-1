@@ -64,6 +64,7 @@
 import { fabric } from "fabric";
 import Button from "./Button";
 
+//Shapes
 const rect = {
   fill: "red",
   width: 100,
@@ -85,10 +86,6 @@ export default {
     const ref = this.$refs.can;
     this.canvas = new fabric.Canvas(ref);
     this.addNewSquare();
-
-    this.canvas.on({
-      "object:selected": this.addNewSquare(),
-    });
   },
   methods: {
     addNewSquare() {
