@@ -40,22 +40,23 @@
               :value="colour"
               v-bind:key="colour"
             >
-              {{ capitalineFirstLetter(colour) }}
+              {{ capitaliseFirstLetter(colour) }}
             </option>
           </select>
         </div>
         <div class="flex flex-row justify-evenly">
           <v-button
-            id="reRenderCanvas"
+            id="undoButton"
             class="w-1/2 mr-2"
-            :onClick="reRenderCanvas"
+            :onClick="handleUndo"
+            v-bind:disable="undoStack.length == 0"
             >Undo</v-button
           >
           <v-button
-            id="reRenderCanvas"
+            id="redoButton"
             class="w-1/2"
-            :onClick="reRenderCanvas"
-            v-bind:disable="redoButtonDisabled"
+            :onClick="handleRedo"
+            v-bind:disable="redoStack.length == 0"
             >Redo</v-button
           >
         </div>
@@ -82,9 +83,11 @@ export default {
   data: () => ({
     canvas: null,
     canvasActiveObjects: [],
-    redoButtonDisabled: true,
     currentObjectColour: "",
     colours: ["red", "green", "blue", "yellow", "pink", "purple"],
+    currentSate: null,
+    undoStack: [],
+    redoStack: [],
   }),
   mounted() {
     const ref = this.$refs.can;
@@ -93,7 +96,6 @@ export default {
 
     this.canvas.on({
       "object:modified": this.canvasSaveState,
-      "object:added": this.canvasSaveState,
       "selection:created": this.canvasHandleSelection,
       "selection:updated": this.canvasHandleSelection,
       "selection:cleared": this.canvasHandleSelectionCleared,
@@ -101,7 +103,26 @@ export default {
   },
   methods: {
     canvasSaveState() {
-      console.log("Modified");
+      this.redoStack = [];
+      if (this.currentState) {
+        this.undoStack.push(this.currentState);
+      }
+      console.log("SAVE");
+
+      this.currentState = JSON.stringify(this.canvas);
+    },
+    handleUndo() {
+      this.revertState(this.undoStack, this.redoStack);
+    },
+    handleRedo() {
+      this.revertState(this.redoStack, this.undoStack);
+    },
+    revertState(forwardsStack, backwardsStack) {
+      backwardsStack.push(this.currentSate);
+      this.currentSate = forwardsStack.pop();
+      this.canvas.clear();
+      this.canvas.loadFromJSON(this.currentSate);
+      this.canvas.renderAll();
     },
     canvasHandleSelection(e) {
       this.canvasActiveObjects = e.selected;
@@ -114,6 +135,7 @@ export default {
     },
     addNewSquare() {
       this.canvas.add(new fabric.Rect(rect));
+      this.reRenderCanvas();
     },
     evenlySpaceVertically() {
       let objects = this.canvas.getObjects();
@@ -160,7 +182,7 @@ export default {
       });
       this.reRenderCanvas();
     },
-    capitalineFirstLetter(str) {
+    capitaliseFirstLetter(str) {
       return str ? str[0].toUpperCase() + str.slice(1) : "";
     },
   },
