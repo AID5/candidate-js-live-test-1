@@ -32,6 +32,7 @@
             id="colour"
             @change="updateColour($event)"
             v-model="currentObjectColour"
+            :disabled="this.canvasActiveObjects.length == 0"
           >
             <option disabled value="">Please Select</option>
             <option
@@ -39,7 +40,7 @@
               :value="colour"
               v-bind:key="colour"
             >
-              {{ colour }}
+              {{ capitalineFirstLetter(colour) }}
             </option>
           </select>
         </div>
@@ -80,16 +81,37 @@ export default {
   name: "Maker",
   data: () => ({
     canvas: null,
+    canvasActiveObjects: [],
     redoButtonDisabled: true,
     currentObjectColour: "",
-    colours: ["Red", "Green", "Blue", "Yellow", "Pink", "Purple"],
+    colours: ["red", "green", "blue", "yellow", "pink", "purple"],
   }),
   mounted() {
     const ref = this.$refs.can;
     this.canvas = new fabric.Canvas(ref);
     this.addNewSquare();
+
+    this.canvas.on({
+      "object:modified": this.canvasSaveState,
+      "object:added": this.canvasSaveState,
+      "selection:created": this.canvasHandleSelection,
+      "selection:updated": this.canvasHandleSelection,
+      "selection:cleared": this.canvasHandleSelectionCleared,
+    });
   },
   methods: {
+    canvasSaveState() {
+      console.log("Modified");
+    },
+    canvasHandleSelection(e) {
+      this.canvasActiveObjects = e.selected;
+      if (this.canvasActiveObjects.length == 1)
+        this.currentObjectColour = e.selected[0].fill;
+    },
+    canvasHandleSelectionCleared() {
+      this.canvasActiveObjects = [];
+      this.currentObjectColour = "";
+    },
     addNewSquare() {
       this.canvas.add(new fabric.Rect(rect));
     },
@@ -122,24 +144,24 @@ export default {
           }
         }
       });
-      this.canvas.renderAll();
+      this.reRenderCanvas();
     },
     reRenderCanvas() {
       this.canvas.renderAll();
-      this.redoButtonDisabled = !this.redoButtonDisabled;
+      this.canvasSaveState();
     },
     getCurrentCanvasObjects() {
       console.log(this.canvas.getObjects());
       return this.canvas.getObjects();
     },
     updateColour(event) {
-      if (!this.canvas.getActiveObject()) {
-        console.log("No active object");
-        return;
-      }
-
-      this.canvas.getActiveObject().set("fill", event.target.value);
-      this.canvas.renderAll();
+      this.canvasActiveObjects.forEach((obj) => {
+        obj.set("fill", event.target.value);
+      });
+      this.reRenderCanvas();
+    },
+    capitalineFirstLetter(str) {
+      return str ? str[0].toUpperCase() + str.slice(1) : "";
     },
   },
   components: {
@@ -155,15 +177,11 @@ export default {
 label {
   --tw-bg-opacity: 1;
   background-color: rgba(107, 114, 128, var(--tw-bg-opacity));
-  cursor: pointer;
   color: white;
   height: 45px;
 }
 label,
 select {
   padding: 0.876rem;
-}
-select {
-  width: 300px;
 }
 </style>
